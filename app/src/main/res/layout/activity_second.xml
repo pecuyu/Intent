@@ -10,14 +10,11 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.yu.intent.MainActivity">
 
-    <Button
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="explicitClick"
-        android:text="显式启动" />
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="implicitClick"
-        android:text="隐式启动"/>
+        android:layout_centerInParent="true"
+        android:textSize="20sp"
+        android:text="@string/this_is_second_activity" />
+
 </RelativeLayout>

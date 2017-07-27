@@ -15,6 +15,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".SecondActivity" >
+            <intent-filter>
+                <action android:name="com.yu.intent.implicit_intent" />
+
+            </intent-filter>
+
+
+        </activity>
     </application>
 
 </manifest>
