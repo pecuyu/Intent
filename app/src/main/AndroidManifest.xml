@@ -11,23 +11,34 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SecondActivity" >
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.yu.intent.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <!-- 映射路径 -->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/files"></meta-data>
+        </provider>
+
+        <activity android:name=".CaptureActivity" android:configChanges="orientation|keyboardHidden|screenSize">
             <intent-filter>
                 <action android:name="com.yu.intent.implicit_intent" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="com.yu.intent.category.my" />
 
                 <data
-                    android:scheme="http"
-                    android:host="www.baidu.com" />
+                    android:host="www.baidu.com"
+                    android:scheme="http" />
             </intent-filter>
-
-
         </activity>
+
     </application>
 
 </manifest>

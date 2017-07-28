@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ShareCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
@@ -28,10 +29,38 @@ public class MainActivity extends AppCompatActivity {
         startActivityImplicitly();
     }
 
+    /**
+     * 使用选择器
+     *
+     * @param view
+     */
+    public void intentChooser(View view) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        // 选择器
+        intent.createChooser(intent, "请选择:");
+        startActivity(intent);
+
+    }
+
+    /**
+     * 使用ShareCompat.IntentBuilder
+     *
+     * @param view
+     */
+    public void shareCompat(View view) {
+        ShareCompat.IntentBuilder builder = ShareCompat.IntentBuilder.from(this);
+        builder.setType("text/plain")
+                .setSubject("subject")  // 主题
+                .setText("text")        // 正文
+                .startChooser(); // 发送
+
+    }
+
 
     /**
      * implicit intent 隐式意图
      * 匹配IntentFilter，分为action、category 和 data 三个部分
+     * data分为Uri、mimeType
      */
     public void startActivityImplicitly() {
         // action有且只可指定一个
@@ -42,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         intent.addCategory("com.yu.intent.category.my");
         // 指定data
         intent.setData(Uri.parse("http://www.baidu.com"));
+        // 选择器
         Intent.createChooser(intent, "请选择");
         /**
          * GET_META_DATA
@@ -58,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
          */
         // 安全检查，判断要启动的组件是否存在
         ResolveInfo resolveInfo = getPackageManager().resolveActivity(intent, MATCH_ALL);
-        if (resolveInfo==null || resolveInfo.activityInfo == null) {
+        if (resolveInfo == null ) {
             Toast.makeText(this, "no match activity", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -73,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void startActivityExplicitly() {
         Intent intent = new Intent();
-        intent.setClass(this, SecondActivity.class);
+        intent.setClass(this, CaptureActivity.class);
         startActivity(intent);
 
     }

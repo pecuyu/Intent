@@ -11,10 +11,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="explicitClick"
-        android:text="显式启动" />
+        android:text="@string/explicit_intent" />
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="implicitClick"
-        android:text="隐式启动"/>
+        android:text="@string/implicit_intent"/>
+
+    <Button
+        android:text="@string/intent_chooser"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="intentChooser"
+        android:id="@+id/button" />
+
+    <Button
+        android:text="@string/share_compat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="shareCompat"
+        android:id="@+id/button2" />
 </LinearLayout>

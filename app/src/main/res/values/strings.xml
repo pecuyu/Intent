@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">Intent</string>
     <string name="this_is_second_activity">this is second activity</string>
+    <string name="explicit_intent">显式启动</string>
+    <string name="implicit_intent">隐式启动</string>
+    <string name="intent_chooser">选择器</string>
+    <string name="share_compat">ShareCompat</string>
+    <string name="capture">拍照</string>
 </resources>
