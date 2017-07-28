@@ -18,7 +18,12 @@
         <activity android:name=".SecondActivity" >
             <intent-filter>
                 <action android:name="com.yu.intent.implicit_intent" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="com.yu.intent.category.my" />
 
+                <data
+                    android:scheme="http"
+                    android:host="www.baidu.com" />
             </intent-filter>
 
 
