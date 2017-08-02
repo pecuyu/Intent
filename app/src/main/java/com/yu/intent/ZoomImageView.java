@@ -7,9 +7,11 @@ package com.yu.intent;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -21,8 +23,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.ImageView;
 
 public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
-        OnScaleGestureListener, OnTouchListener
-{
+        OnScaleGestureListener, OnTouchListener {
     private boolean mOnce = false;//是否执行了一次
 
     /**
@@ -40,7 +41,7 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
     /**
      * 缩放矩阵
      */
-    private Matrix scaleMatrix;
+    private Matrix mMatrix;
 
     /**
      * 缩放的手势监控类
@@ -78,24 +79,22 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
     /**
      * 是否正在执行双击缩放
      */
-    private boolean isAutoScale ;
+    private boolean isAutoScale;
 
 
-
-    public ZoomImageView(Context context)
-    {
-        this(context,null);
+    public ZoomImageView(Context context) {
+        this(context, null);
     }
-    public ZoomImageView(Context context, AttributeSet attrs)
-    {
-        this(context, attrs,0);
+
+    public ZoomImageView(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
 
     }
-    public ZoomImageView(Context context, AttributeSet attrs, int defStyle)
-    {
+
+    public ZoomImageView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
-        scaleMatrix = new Matrix();
+        mMatrix = new Matrix();
 
         setScaleType(ScaleType.MATRIX);
 
@@ -105,11 +104,9 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
         //获得系统给定的触发移动效果的临界值
         mScaleSlop = ViewConfiguration.get(context).getScaledTouchSlop();
 
-        mGestureDetector = new GestureDetector(context,new GestureDetector.SimpleOnGestureListener()
-        {
-            public boolean onDoubleTap(MotionEvent e)
-            {
-                if(isAutoScale)//如果正在执行双击缩放，直接跳过
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+            public boolean onDoubleTap(MotionEvent e) {
+                if (isAutoScale)//如果正在执行双击缩放，直接跳过
                 {
                     return true;
                 }
@@ -119,38 +116,36 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
                 //获得当前的缩放比例
                 float scale = getDrawableScale();
 
-                if(scale<midScale)//如果比midScale小，一律放大，否则一律缩小为initScale
+                if (scale < midScale)//如果比midScale小，一律放大，否则一律缩小为initScale
                 {
-//                    scaleMatrix.postScale(midScale/scale,midScale/scale, x, y);
-//                    setImageMatrix(scaleMatrix);
+//                    mMatrix.postScale(midScale/scale,midScale/scale, x, y);
+//                    setImageMatrix(mMatrix);
                     postDelayed(new AutoScaleRunnable(midScale, x, y), 16);
 
                     isAutoScale = true;
 
-                }else
-                {
-//                    scaleMatrix.postScale(initScale/scale,initScale/scale, x, y);
-//                    setImageMatrix(scaleMatrix);
+                } else {
+//                    mMatrix.postScale(initScale/scale,initScale/scale, x, y);
+//                    setImageMatrix(mMatrix);
                     postDelayed(new AutoScaleRunnable(initScale, x, y), 16);
 
                     isAutoScale = true;
                 }
 
 
-
                 return true;
 
-            };
+            }
+
+            ;
         }
         );
     }
+
     /**
-     *将 双击缩放使用梯度
-     * @author fuly1314
-     *
+     * 双击自动缩放
      */
-    private class AutoScaleRunnable implements Runnable
-    {
+    private class AutoScaleRunnable implements Runnable {
 
         private float targetScale;//缩放的目标值
         private float x;
@@ -158,8 +153,8 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
 
         private float tempScale;
 
-        private float BIGGER = 1.07F;
-        private float SMALL = 0.93F;//缩放的梯度
+        private float BIGGER = 1.08F;
+        private float SMALL = 0.92F;//缩放的梯度
 
         public AutoScaleRunnable(float targetScale, float x, float y) {
             super();
@@ -167,33 +162,28 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
             this.x = x;
             this.y = y;
 
-            if(getDrawableScale()<targetScale)
-            {
+            if (getDrawableScale() < targetScale) {
                 tempScale = BIGGER;
             }
-            if(getDrawableScale()>targetScale)
-            {
+            if (getDrawableScale() > targetScale) {
                 tempScale = SMALL;
             }
         }
 
-        public void run()
-        {
+        public void run() {
 
-            scaleMatrix.postScale(tempScale, tempScale, x, y);
+            mMatrix.postScale(tempScale, tempScale, x, y);
             checkBoderAndCenter();
-            setImageMatrix(scaleMatrix);
+            setImageMatrix(mMatrix);
 
             float scale = getDrawableScale();
 
-            if((scale<targetScale&&tempScale>1.0f)||(scale>targetScale&&tempScale<1.0f))
-            {
+            if ((scale < targetScale && tempScale > 1.0f) || (scale > targetScale && tempScale < 1.0f)) {
                 postDelayed(this, 16);
-            }else
-            {
-                scaleMatrix.postScale(targetScale/scale, targetScale/scale, x, y);
+            } else {
+                mMatrix.postScale(targetScale / scale, targetScale / scale, x, y);
                 checkBoderAndCenter();
-                setImageMatrix(scaleMatrix);
+                setImageMatrix(mMatrix);
 
                 isAutoScale = false;
             }
@@ -206,8 +196,7 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
     /**
      * 该方法在view与window绑定时被调用，且只会被调用一次，其在view的onDraw方法之前调用
      */
-    protected void onAttachedToWindow()
-    {
+    protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         //注册监听器
         getViewTreeObserver().addOnGlobalLayoutListener(this);
@@ -216,8 +205,8 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
     /**
      * 该方法在view被销毁时被调用
      */
-    @SuppressLint("NewApi") protected void onDetachedFromWindow()
-    {
+    @SuppressLint("NewApi")
+    protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         //取消监听器
         getViewTreeObserver().removeOnGlobalLayoutListener(this);
@@ -227,15 +216,12 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
      * 当一个view的布局加载完成或者布局发生改变时，OnGlobalLayoutListener会监听到，调用该方法
      * 因此该方法可能会被多次调用，需要在合适的地方注册和取消监听器
      */
-    public void onGlobalLayout()
-    {
-        if(!mOnce)
-        {
+    public void onGlobalLayout() {
+        if (!mOnce) {
             //获得当前view的Drawable
             Drawable d = getDrawable();
 
-            if(d == null)
-            {
+            if (d == null) {
                 return;
             }
 
@@ -251,53 +237,50 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
             float scale = 1.0f;
 
             //如果仅仅是图片宽度比view宽度大，则应该将图片按宽度缩小
-            if(dw>width&&dh<height)
-            {
-                scale = width*1.0f/dw;
+            if (dw > width && dh < height) {
+                scale = width * 1.0f / dw;
             }
             //如果图片和高度都比view的大，则应该按最小的比例缩小图片
-            if(dw>width&&dh>height)
-            {
-                scale = Math.min(width*1.0f/dw, height*1.0f/dh);
+            if (dw > width && dh > height) {
+                scale = Math.min(width * 1.0f / dw, height * 1.0f / dh);
             }
             //如果图片宽度和高度都比view的要小，则应该按最小的比例放大图片
-            if(dw<width&&dh<height)
-            {
-                scale = Math.min(width*1.0f/dw, height*1.0f/dh);
+            if (dw < width && dh < height) {
+                scale = Math.min(width * 1.0f / dw, height * 1.0f / dh);
             }
             //如果仅仅是高度比view的大，则按照高度缩小图片即可
-            if(dw<width&&dh>height)
-            {
-                scale = height*1.0f/dh;
+            if (dw < width && dh > height) {
+                scale = height * 1.0f / dh;
             }
 
             //初始化缩放的比例
             initScale = scale;
-            midScale = initScale*2;
-            maxScale = initScale*4;
+            midScale = initScale * 2;
+            maxScale = initScale * 4;
 
             //移动图片到达view的中心
-            int dx = width/2 - dw/2;
-            int dy = height/2 - dh/2;
-            scaleMatrix.postTranslate(dx, dy);
+            int dx = width / 2 - dw / 2;
+            int dy = height / 2 - dh / 2;
+            mMatrix.postTranslate(dx, dy);
 
             //缩放图片
-            scaleMatrix.postScale(initScale, initScale, width/2, height/2);
+            mMatrix.postScale(initScale, initScale, width / 2, height / 2);
 
-            setImageMatrix(scaleMatrix);
+            setImageMatrix(mMatrix);
             mOnce = true;
         }
 
     }
+
     /**
      * 获取当前已经缩放的比例
-     * @return  因为x方向和y方向比例相同，所以只返回x方向的缩放比例即可
+     *
+     * @return 因为x方向和y方向比例相同，所以只返回x方向的缩放比例即可
      */
-    private float getDrawableScale()
-    {
+    private float getDrawableScale() {
 
         float[] values = new float[9];
-        scaleMatrix.getValues(values);
+        mMatrix.getValues(values);
 
         return values[Matrix.MSCALE_X];
 
@@ -305,14 +288,12 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
 
     /**
      * 缩放手势进行时调用该方法
-     *
+     * <p>
      * 缩放范围：initScale~maxScale
      */
-    public boolean onScale(ScaleGestureDetector detector)
-    {
+    public boolean onScale(ScaleGestureDetector detector) {
 
-        if(getDrawable() == null)
-        {
+        if (getDrawable() == null) {
             return true;//如果没有图片，下面的代码没有必要运行
         }
 
@@ -320,114 +301,102 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
         //获取当前缩放因子
         float scaleFactor = detector.getScaleFactor();
 
-        if((scale<maxScale&&scaleFactor>1.0f)||(scale>initScale&&scaleFactor<1.0f))
-        {
+        if ((scale < maxScale && scaleFactor > 1.0f) || (scale > initScale && scaleFactor < 1.0f)) {
             //如果缩小的范围比允许的最小范围还要小，就重置缩放因子为当前的状态的因子
-            if(scale*scaleFactor<initScale)
-            {
-                scaleFactor = initScale/scale;
+            if (scale * scaleFactor < initScale) {
+                scaleFactor = initScale / scale;
             }
             //如果缩小的范围比允许的最小范围还要小，就重置缩放因子为当前的状态的因子
-            if(scale*scaleFactor>maxScale)
-            {
-                scaleFactor = maxScale/scale;
+            if (scale * scaleFactor > maxScale) {
+                scaleFactor = maxScale / scale;
             }
 
-//            scaleMatrix.postScale(scaleFactor, scaleFactor, getWidth()/2, getHeight()/2);
-            scaleMatrix.postScale(scaleFactor, scaleFactor,detector.getFocusX(),
+//            mMatrix.postScale(scaleFactor, scaleFactor, getWidth()/2, getHeight()/2);
+            mMatrix.postScale(scaleFactor, scaleFactor, detector.getFocusX(),
                     detector.getFocusY());
 
             checkBoderAndCenter();//处理缩放后图片边界与屏幕有间隙或者不居中的问题
 
 
-            setImageMatrix(scaleMatrix);//千万不要忘记设置这个，我总是忘记
+            setImageMatrix(mMatrix);//千万不要忘记设置这个，我总是忘记
         }
-
 
 
         return true;
     }
+
     /**
      * 处理缩放后图片边界与屏幕有间隙或者不居中的问题
      */
-    private void checkBoderAndCenter()
-    {
+    private void checkBoderAndCenter() {
         RectF rectf = getDrawableRectF();
 
         int width = getWidth();
         int height = getHeight();
 
-        float delaX =0;
+        float delaX = 0;
         float delaY = 0;
 
-        if(rectf.width()>=width)
-        {
-            if(rectf.left>0)
-            {
-                delaX = - rectf.left;
+        if (rectf.width() >= width) {
+            if (rectf.left > 0) {
+                delaX = -rectf.left;
             }
 
-            if(rectf.right<width)
-            {
+            if (rectf.right < width) {
                 delaX = width - rectf.right;
             }
         }
 
-        if(rectf.height()>=height)
-        {
-            if(rectf.top>0)
-            {
+        if (rectf.height() >= height) {
+            if (rectf.top > 0) {
                 delaY = -rectf.top;
             }
-            if(rectf.bottom<height)
-            {
+            if (rectf.bottom < height) {
                 delaY = height - rectf.bottom;
             }
         }
 
-        if(rectf.width()<width)
-        {
-            delaX = width/2 - rectf.right+ rectf.width()/2;
+        if (rectf.width() < width) {
+            delaX = width / 2 - rectf.right + rectf.width() / 2;
         }
 
-        if(rectf.height()<height)
-        {
-            delaY =  height/2 - rectf.bottom+ rectf.height()/2;
+        if (rectf.height() < height) {
+            delaY = height / 2 - rectf.bottom + rectf.height() / 2;
         }
 
-        scaleMatrix.postTranslate(delaX, delaY);
+        mMatrix.postTranslate(delaX, delaY);
     }
+
     /**
      * 获取图片根据矩阵变换后的四个角的坐标，即left,top,right,bottom
+     *
      * @return
      */
-    private RectF getDrawableRectF()
-    {
-        Matrix matrix = scaleMatrix;
+    private RectF getDrawableRectF() {
+        Matrix matrix = mMatrix;
         RectF rectf = new RectF();
         Drawable d = getDrawable();
-        if(d != null)
-        {
+        if (d != null) {
 
             rectf.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
         }
 
         matrix.mapRect(rectf);
-        return  rectf;
+        return rectf;
     }
+
     /**
      * 缩放手势开始时调用该方法
      */
-    public boolean onScaleBegin(ScaleGestureDetector detector)
-    {
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
         //返回为true，则缩放手势事件往下进行，否则到此为止，即不会执行onScale和onScaleEnd方法
         return true;
     }
+
     /**
      * 缩放手势完成后调用该方法
      */
-    public void onScaleEnd(ScaleGestureDetector detector)
-    {
+    public void onScaleEnd(ScaleGestureDetector detector) {
 
 
     }
@@ -435,40 +404,28 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
     /**
      * 监听触摸事件
      */
-    public boolean onTouch(View v, MotionEvent event)
-    {
+    public boolean onTouch(View v, MotionEvent event) {
 
-        if(mGestureDetector.onTouchEvent(event))
-        {
+        if (mGestureDetector.onTouchEvent(event)) {
             return true;
         }
 
-        if(mScaleGestureDetector != null)
-        {
+        if (mScaleGestureDetector != null) {
             //将触摸事件传递给手势缩放这个类
             mScaleGestureDetector.onTouchEvent(event);
         }
 
 
-        //获得多点个数，也叫屏幕上手指的个数
+//        //获得多点个数，也叫屏幕上手指的个数
         int pointCount = event.getPointerCount();
 
-        float x =0;
-        float y =0;//中心点的x和y
+        PointF pivotPoint = getPivotPoint(event);
+        int x = (int) pivotPoint.x;
+        int y = (int) pivotPoint.y;
 
-        for(int i=0;i<pointCount;i++)
-        {
-            x+=event.getX(i);
-            y+=event.getY(i);
-        }
-
-        //求出中心点的位置
-        x/= pointCount;
-        y/= pointCount;
-
+        float degree = computeDegree(getWidth(), getHeight(), x, y);
         //如果手指的数量发生了改变，则不移动
-        if(mLastPoint != pointCount)
-        {
+        if (mLastPoint != pointCount) {
             isCanDrag = false;
             mLastX = x;
             mLastY = y;
@@ -476,40 +433,50 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
         }
         mLastPoint = pointCount;
 
-
-        switch(event.getAction())
-        {
+        float rotation0 = 0;
+        switch (event.getAction() & event.getActionMasked()) {
+            case MotionEvent.ACTION_POINTER_DOWN:
+                rotation0 = rotation(event);
+                break;
             case MotionEvent.ACTION_MOVE:
 
                 //求出移动的距离
                 float dx = x - mLastX;
-                float dy = y- mLastY;
+                float dy = y - mLastY;
 
-                if(!isCanDrag)
-                {
-                    isCanDrag = isCanDrag(dx,dy);
+                if (!isCanDrag) {
+                    isCanDrag = isCanDrag(dx, dy);
                 }
 
-                if(isCanDrag)
-                {
+                if (isCanDrag) {
                     //如果图片能正常显示，就不需要移动了
                     RectF rectf = getDrawableRectF();
-                    if(rectf.width()<=getWidth())
-                    {
+                    if (rectf.width() <= getWidth()) {
                         dx = 0;
                     }
-                    if(rectf.height()<=getHeight())
-                    {
+                    if (rectf.height() <= getHeight()) {
                         dy = 0;
                     }
 
-
                     //开始移动
-                    scaleMatrix.postTranslate(dx, dy);
+                    mMatrix.postTranslate(dx, dy);
                     //处理移动后图片边界与屏幕有间隙或者不居中的问题
                     checkBoderAndCenterWhenMove();
-                    setImageMatrix(scaleMatrix);
+                    setImageMatrix(mMatrix);
                 }
+
+                if (event.getPointerCount() > 1) {
+                    pivotPoint = getPivotPoint(event);
+                    degree = computeDegree(getWidth(), getHeight(), pivotPoint.x, pivotPoint.y);
+                    float rotation = rotation(event) - rotation0;
+//                    mMatrix.postRotate(rotation, getWidth() / 2, getHeight() / 2);
+                    mMatrix.setRotate(degree, getWidth() / 2, getHeight() / 2);
+//                degree += Math.abs(getDegreeByPointer(event));
+//                    setImageMatrix(mMatrix);
+                    Log.e("TAG", "degree=" + degree);
+
+                }
+
 
                 mLastX = x;
                 mLastY = y;
@@ -517,14 +484,110 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
 
                 break;
             case MotionEvent.ACTION_UP:
+
             case MotionEvent.ACTION_CANCEL:
                 mLastPoint = 0;
+                degree = getDegreeByPointer(event);
                 break;
 
         }
 
         return true;
     }
+
+    public PointF getPivotPoint(MotionEvent event) {
+
+        //获得多点个数，也叫屏幕上手指的个数
+        int pointCount = event.getPointerCount();
+
+        float x = 0;
+        float y = 0;//中心点的x和y
+
+        for (int i = 0; i < pointCount; i++) {
+            x += event.getX(i);
+            y += event.getY(i);
+        }
+
+        //求出中心点的位置
+        x /= pointCount;
+        y /= pointCount;
+        PointF pointF = new PointF(x, y);
+        return pointF;
+    }
+
+    /**
+     * 计算以(src_x,src_y)为坐标圆点，建立直角体系，求出(target_x,target_y)坐标与x轴的夹角
+     * 主要是利用反正切函数的知识求出夹角
+     *
+     * @param src_x
+     * @param src_y
+     * @param target_x
+     * @param target_y
+     * @return
+     */
+    float computeDegree(float src_x, float src_y, float target_x, float target_y) {
+
+        float detaX = target_x - src_x;
+        float detaY = target_y - src_y;
+        double d;
+        //坐标在四个象限里
+        if (detaX != 0) {
+            float tan = Math.abs(detaY / detaX);
+
+            if (detaX > 0) {
+
+                //第一象限
+                if (detaY >= 0) {
+                    d = Math.atan(tan);
+
+                } else {
+                    //第四象限
+                    d = 2 * Math.PI - Math.atan(tan);
+                }
+
+            } else {
+                if (detaY >= 0) {
+                    //第二象限
+                    d = Math.PI - Math.atan(tan);
+                } else {
+                    //第三象限
+                    d = Math.PI + Math.atan(tan);
+                }
+            }
+
+        } else {
+            //坐标在y轴上
+            if (detaY > 0) {
+                //坐标在y>0上
+                d = Math.PI / 2;
+            } else {
+                //坐标在y<0上
+                d = -Math.PI / 2;
+            }
+        }
+
+        return (float) ((d * 180) / Math.PI);
+    }
+
+    // 取旋转角度
+    private float rotation(MotionEvent event) {
+        double delta_x = (event.getX(0) - event.getX(1));
+        double delta_y = (event.getY(0) - event.getY(1));
+        double radians = Math.atan2(delta_y, delta_x);
+        return (float) Math.toDegrees(radians);
+    }
+
+    private float getDegreeByPointer(MotionEvent event) {
+        if (event.getPointerCount() <= 1) {
+            return 0;
+        }
+        float dx = event.getX(1) - event.getX(0);
+        float dy = event.getY(1) - event.getY(0);
+        double asin = Math.asin(dx / Math.sqrt(dx * dx + dy * dy));
+        Log.e("TAG", "asin-->" + (asin * 180 / Math.PI));
+        return (float) (asin * 180 / Math.PI);
+    }
+
     /**
      * 处理移动后图片边界与屏幕有间隙或者不居中的问题
      * 这跟我们前面写的代码很像
@@ -538,37 +601,31 @@ public class ZoomImageView extends ImageView implements OnGlobalLayoutListener,
         int width = getWidth();
         int height = getHeight();
 
-        if(rectf.width()>width&&rectf.left>0)
-        {
-            delaX = - rectf.left;
+        if (rectf.width() > width && rectf.left > 0) {
+            delaX = -rectf.left;
         }
-        if(rectf.width()>width&&rectf.right<width)
-        {
+        if (rectf.width() > width && rectf.right < width) {
             delaX = width - rectf.right;
         }
-        if(rectf.height()>height&&rectf.top>0)
-        {
-            delaY = - rectf.top;
+        if (rectf.height() > height && rectf.top > 0) {
+            delaY = -rectf.top;
         }
-        if(rectf.height()>height&&rectf.bottom<height)
-        {
+        if (rectf.height() > height && rectf.bottom < height) {
             delaY = height - rectf.bottom;
         }
 
-        scaleMatrix.postTranslate(delaX, delaY);
+        mMatrix.postTranslate(delaX, delaY);
     }
+
     /**
      * 判断是否触发移动效果
+     *
      * @param dx
      * @param dy
      * @return
      */
     private boolean isCanDrag(float dx, float dy) {
 
-        return Math.sqrt(dx*dx+dy*dy)>mScaleSlop;
+        return Math.sqrt(dx * dx + dy * dy) > mScaleSlop;
     }
-
-
-
-
 }

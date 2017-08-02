@@ -1,5 +1,6 @@
 package com.yu.intent;
 
+import android.animation.Animator;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -7,12 +8,16 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.FileProvider;
 import android.view.View;
-import android.widget.ImageView;
+import android.view.ViewAnimationUtils;
+import android.view.Window;
 
 import java.io.File;
 import java.util.Date;
@@ -26,39 +31,41 @@ import java.util.List;
 public class CaptureActivity extends Activity {
 
     private static final int REQUEST_CODE_CAPTURE = 1;
-    private static final String AUTHORITY =  "com.yu.intent.fileprovider";
+    private static final String AUTHORITY = "com.yu.intent.fileprovider";
 
 
-    private ImageView mIvCapturePhoto;
+    private ZoomImageView mIvCapturePhoto;
     private File mFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS);
         setContentView(R.layout.activity_second);
 
-        mIvCapturePhoto = (ImageView) findViewById(R.id.id_iv_capture_show);
+        mIvCapturePhoto = (ZoomImageView) findViewById(R.id.id_iv_capture_show);
     }
 
     /**
      * 拍照
+     *
      * @param view
      */
     public void capture(View view) {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         boolean canTakePhoto = (getPackageManager().resolveActivity(intent, PackageManager.MATCH_ALL) == null) ? false : true;
-        if (canTakePhoto) {
-            startActivity(intent);
+        if (!canTakePhoto) {
+            return;
         }
-        mFile = new File(getFilesDir(), "IMG_"+new Date().toString() + ".jpg");
-        Uri uri = FileProvider.getUriForFile(this,AUTHORITY, mFile);
+        mFile = new File(getFilesDir(), "IMG_" + new Date().toString() + ".jpg");
+        Uri uri = FileProvider.getUriForFile(this, AUTHORITY, mFile);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);   // 指定uri输出
 //        intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(mFile));
         List<ResolveInfo> resolveInfos = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_ALL);
-        for (ResolveInfo info: resolveInfos) {  // 循环许可权限
+        for (ResolveInfo info : resolveInfos) {  // 循环许可权限
             grantUriPermission(info.activityInfo.packageName, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         }
-        startActivityForResult(intent,REQUEST_CODE_CAPTURE);
+        startActivityForResult(intent, REQUEST_CODE_CAPTURE);
     }
 
     public void showImageDialog(View view) {
@@ -66,7 +73,20 @@ public class CaptureActivity extends Activity {
             return;
         }
         ImageDialogFragment dialogFragment = ImageDialogFragment.newInstance(mFile.getPath());
-        dialogFragment.show(getFragmentManager(),"ImageDialogFragment");
+        dialogFragment.show(getFragmentManager(), "ImageDialogFragment");
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void showImage(View view) {
+        mIvCapturePhoto.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher, null));
+        Point size = new Point();
+        getWindowManager().getDefaultDisplay().getSize(size);
+        Animator circularReveal = ViewAnimationUtils.createCircularReveal(view, (int) view.getWidth()/2,
+                (int) view.getHeight()/2, 5, size.y);
+        circularReveal.setDuration(1000);
+        circularReveal.start();
+
     }
 
     @Override
@@ -86,6 +106,7 @@ public class CaptureActivity extends Activity {
 
     /**
      * 获取压缩的图片
+     *
      * @param filePath
      * @param destWidth
      * @param destHeight
@@ -100,7 +121,7 @@ public class CaptureActivity extends Activity {
         BitmapFactory.decodeFile(filePath, opts);
         int srcWidth = opts.outWidth;
         int srcHeight = opts.outHeight;
-        int scale=1; // 默认缩放比为1
+        int scale = 1; // 默认缩放比为1
         if (srcWidth > destWidth || srcHeight > destHeight) {  // 比较大小计算缩放比
             int wScale = srcWidth / destWidth;
             int hScale = srcHeight / destHeight;

@@ -8,7 +8,7 @@
     android:orientation="vertical"
     tools:context="com.yu.intent.MainActivity">
 
-    <ImageView
+    <com.yu.intent.ZoomImageView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="6"
@@ -23,6 +23,13 @@
         android:layout_weight="1"
         android:onClick="showImageDialog"
         android:text="加载大图" />
+    <Button
+        android:id="@+id/btn_show_in_this"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:onClick="showImage"
+        android:text="加载" />
 
     <Button
         android:id="@+id/btn_capture"
